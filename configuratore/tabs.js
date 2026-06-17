@@ -157,7 +157,7 @@ function fmtNum(v){ return (Math.round(v*2)/2).toLocaleString('it'); }
 const STRUCT_NAMES={cost:'Costellazione (registri + ordine)', righe:'Righe modulari', colonne:'Colonne modulari', griglia:'Griglia allineata'};
 
 function buildMath(){
-  const frameArea=f=>(f.w+2*f.pp+2*(f.cw||0))*(f.h+2*f.pp+2*(f.cw||0));
+  const frameArea=f=>{ const e=fmtEff(f); return (f.w+2*e.pp+2*e.cw)*(f.h+2*e.pp+2*e.cw); };
   let rows='', totUsed=0, totAvail=0, totCount=0;
   const totals={}; P.formats.forEach(f=>totals[f.id]=0);
   P.walls.forEach(wall=>{
@@ -173,8 +173,22 @@ function buildMath(){
 
   let fmtRows='';
   P.formats.forEach(f=>{
-    fmtRows+=`<tr><td><strong>${f.name} cm</strong>${f.central?' <small class="warn" style="color:var(--brass)!important">centrale</small>':''}</td><td>${fmtNum(f.w+2*f.pp+2*(f.cw||0))} × ${fmtNum(f.h+2*f.pp+2*(f.cw||0))} cm</td><td>${f.pp} cm</td><td>${fmtNum(f.cw||0)} cm · ${f.cc==='bianca'?'bianca':'nera'}</td><td>${totals[f.id]} pz</td><td>${Math.round(frameArea(f)).toLocaleString('it')} cm²</td></tr>`;
+    const e=fmtEff(f);
+    const supporto = e.hasFrame ? `${TIPO_SHORT[e.tipo]} · ${fmtNum(e.cw)} cm ${e.cc==='bianca'?'bianca':'nera'}${e.tipo==='cornice_pp'?` · pp ${fmtNum(e.pp)}`:''}` : TIPO_SHORT[e.tipo];
+    fmtRows+=`<tr><td><strong>${f.name} cm</strong>${f.central?' <small class="warn" style="color:var(--brass)!important">centrale</small>':''}</td><td>${supporto}</td><td>${fmtNum(f.w+2*e.pp+2*e.cw)} × ${fmtNum(f.h+2*e.pp+2*e.cw)} cm</td><td>${totals[f.id]} pz</td><td>${Math.round(frameArea(f)).toLocaleString('it')} cm²</td></tr>`;
   });
+
+  /* preventivo: quantità × listino */
+  const priced=P.formats.some(f=>(+f.prezzo||0)>0);
+  let prevRows='', prevTot=0;
+  P.formats.forEach(f=>{
+    const q=totals[f.id]; if(!q) return;
+    const pr=Math.max(0,+f.prezzo||0); const sub=q*pr; prevTot+=sub;
+    prevRows+=`<tr><td><strong>${f.name} cm</strong> <small>${TIPO_SHORT[fmtTipo(f)]}</small></td><td>${q} pz</td><td>${pr?eur(pr):'<span class="warn">— da definire</span>'}</td><td>${pr?eur(sub):'—'}</td></tr>`;
+  });
+  const prevTable = prevRows
+    ? `<h2>Preventivo</h2><table><tr><th>Formato · supporto</th><th>Quantità</th><th>Prezzo cad.</th><th>Subtotale</th></tr>${prevRows}<tr><td colspan="3" style="text-align:right"><strong>TOTALE</strong></td><td><strong style="color:var(--brass)">${eur(prevTot)}</strong></td></tr></table>${priced?'':'<p class="note" style="padding-left:0">Imposta i prezzi (€ cad.) nei formati per completare il preventivo.</p>'}`
+    : '';
 
   let qhead='<tr><th>Parete</th>'+P.formats.map(f=>`<th>${f.name}</th>`).join('')+'<th>Totale</th></tr>';
   let qrows=P.walls.map(w=>`<tr><td>${w.name}</td>${P.formats.map(f=>{ const v=(w.counts&&w.counts[f.id])||0,h=(w.countsH&&w.countsH[f.id])||0; return `<td>${v+h}${(v&&h)?` <small>(${v}v·${h}o)</small>`:''}</td>`; }).join('')}<td><strong>${wallTotal(w)}</strong></td></tr>`).join('');
@@ -185,7 +199,8 @@ function buildMath(){
     <h2>Quantità per parete</h2>
     <table>${qhead}${qrows}</table>
     <h2>Formati e ingombri</h2>
-    <table><tr><th>Formato foto</th><th>Ingombro cornice</th><th>Passepartout</th><th>Cornice</th><th>Quantità</th><th>Area cornice</th></tr>${fmtRows}</table>
+    <table><tr><th>Formato foto</th><th>Supporto</th><th>Ingombro</th><th>Quantità</th><th>Area</th></tr>${fmtRows}</table>
+    ${prevTable}
     <h2>Occupazione per parete</h2>
     <table><tr><th>Parete</th><th>Area disponibile</th><th>Area cornici</th><th>Occupazione</th><th>Stato</th></tr>${rows}
     <tr><td><strong>TOTALE</strong></td><td><strong>${totAvail.toLocaleString('it')} cm²</strong></td><td><strong>${Math.round(totUsed).toLocaleString('it')} cm²</strong></td><td><strong>${totPct}%</strong></td><td>—</td></tr></table>

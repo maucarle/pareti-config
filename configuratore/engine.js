@@ -4,6 +4,22 @@
    ════════════════════════════════════════════════════════ */
 const ENG_MARGIN = 2;
 
+/* ── tipi di supporto ──
+   cornice_pp = cornice con passepartout · cornice = cornice senza passepartout
+   pannello   = stampa diretta su pannello · tela = stampa su tela/canvas
+   fmtEff() ricava la geometria EFFETTIVA dal tipo: solo le cornici hanno
+   bordo (cw) e solo cornice_pp ha passepartout (pp). pannello/tela = bordo 0. */
+const TIPO_NAMES = { cornice_pp:'Cornice con passepartout', cornice:'Cornice', pannello:'Pannello', tela:'Tela' };
+const TIPO_SHORT = { cornice_pp:'Cornice + pp', cornice:'Cornice', pannello:'Pannello', tela:'Tela' };
+function fmtTipo(f){ return f.tipo || (((f.cw||0)>0) ? ((f.pp||0)>0 ? 'cornice_pp':'cornice') : 'pannello'); }
+function fmtEff(f){
+  const tipo=fmtTipo(f);
+  const hasFrame=(tipo==='cornice_pp'||tipo==='cornice');
+  const hasPP=(tipo==='cornice_pp');
+  return { tipo, hasFrame, isCanvas:(tipo==='tela'),
+           pp: hasPP?(f.pp||0):0, cw: hasFrame?(f.cw||0):0, cc:f.cc||'nera' };
+}
+
 function mulberry32(seed){ let a = seed>>>0; return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 function engShuffle(arr,rnd){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
 function engCollides(x,y,w,h,placed,gap){
@@ -14,8 +30,8 @@ function engCollides(x,y,w,h,placed,gap){
 }
 
 function frameDims(fmt, rot){
-  const cw = fmt.cw || 0;
-  const w = fmt.w + 2*fmt.pp + 2*cw, h = fmt.h + 2*fmt.pp + 2*cw;
+  const e = fmtEff(fmt);
+  const w = fmt.w + 2*e.pp + 2*e.cw, h = fmt.h + 2*e.pp + 2*e.cw;
   return rot ? {w:h, h:w} : {w, h};
 }
 
