@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+*.zip
+# Dati dei clienti: MAI in questo repo (pubblico). Stanno nel repo privato
+# "pareti-clienti-dati" e vengono letti dall'app via cartella (File System Access).
+progetti/
+foto/
+pareti-backup*.json

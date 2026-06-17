@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configuratore Pareti — Studio Fotografico</title>
+<style>
+  :root{
+    --bg:        #ece5d8;
+    --bg-deep:   #e3dacb;
+    --card:      #fbf8f1;
+    --card-2:    #f5efe3;
+    --ink:       #2e2820;
+    --ink-soft:  #6d6253;
+    --ink-faint: #a89c89;
+    --line:      #d8cfbd;
+    --line-soft: #e6ddcd;
+    --brass:     #9c7a45;
+    --brass-lt:  #b89a64;
+    --brass-dim: #c9b48b;
+    --wall-paint:#f3eee4;
+    --mat:       #f8f3e9;
+    --ease:      cubic-bezier(.16,1,.3,1);
+    --serif: 'Iowan Old Style','Hoefler Text','Palatino Linotype',Palatino,Georgia,'Times New Roman',serif;
+    --sans: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body{
+    font-family: var(--serif);
+    background: radial-gradient(140% 90% at 50% -10%, #f1ebe0 0%, var(--bg) 55%, var(--bg-deep) 100%);
+    color: var(--ink);
+    padding: 36px 28px 90px;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ── Header ── */
+  header{ max-width: 1180px; margin: 0 auto 20px; text-align: center; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+  .studio{ font-family: var(--sans); font-size: 10px; letter-spacing: .42em; text-transform: uppercase; color: var(--brass); margin-bottom: 14px; font-weight: 500; }
+  h1{ font-size: 28px; letter-spacing: .01em; font-weight: 400; color: var(--ink); margin-bottom: 10px; line-height: 1.2; }
+  h1 em{ font-style: italic; color: var(--brass); }
+  .meta{ font-size: 13px; color: var(--ink-soft); line-height: 1.9; font-style: italic; }
+  .meta b{ color: var(--ink); font-style: normal; font-weight: 600; }
+
+  /* ── Barra progetti ── */
+  .proj-bar{ max-width: 1180px; margin: 0 auto 16px; display:flex; align-items:center; justify-content:center; gap: 10px; flex-wrap: wrap; }
+  .proj-lab{ font-family: var(--sans); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-faint); }
+  .proj-sel{ font-family: var(--sans); font-size: 12px; padding: 9px 14px; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 2px; min-width: 210px; cursor: pointer; }
+  .proj-btn{ font-family: var(--sans); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; padding: 9px 13px; background: transparent; border: 1px solid var(--line); color: var(--ink-soft); cursor: pointer; border-radius: 2px; transition: background .2s, color .2s; }
+  .proj-btn:hover{ background: var(--card-2); color: var(--brass); border-color: var(--brass-dim); }
+
+  /* ── Barra archivio (persistenza su cartella) ── */
+  .archive-bar{ max-width: 1180px; margin: 0 auto 16px; display:flex; align-items:center; justify-content:center; gap: 12px; flex-wrap: wrap; font-family: var(--sans); font-size: 11px; color: var(--ink-soft); padding: 9px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 2px; }
+  .archive-bar.warn{ border-color: var(--brass-dim); background: var(--card-2); }
+  .archive-bar .ab-ico{ width: 13px; height: 13px; flex-shrink:0; }
+  .archive-bar b{ color: var(--ink); font-weight: 600; }
+  .archive-bar .ab-state{ font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
+  .archive-bar .ab-state.ok{ color: #5f7a3e; }
+  .archive-bar .ab-state.err{ color: #a33; }
+  .ab-btn{ font-family: var(--sans); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; padding: 7px 12px; background: transparent; border: 1px solid var(--line); color: var(--ink-soft); cursor: pointer; border-radius: 2px; transition: background .2s, color .2s; }
+  .ab-btn:hover{ background: var(--card-2); color: var(--brass); border-color: var(--brass-dim); }
+  .ab-btn.primary{ background: var(--brass); border-color: var(--brass); color:#fff; }
+  .ab-btn.primary:hover{ opacity:.86; background: var(--brass); color:#fff; }
+  @media print{ .archive-bar{ display:none !important; } }
+
+  /* ── Toolbar / Tabs ── */
+  .toolbar{ max-width: 1180px; margin: 0 auto 14px; display:flex; align-items:center; justify-content:center; gap: 18px; flex-wrap: wrap; }
+  .tabs{ display: inline-flex; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; background: var(--card); }
+  .tab-btn{ padding: 12px 20px; background: transparent; border: 0; border-right: 1px solid var(--line-soft); color: var(--ink-soft); cursor: pointer; font-family: var(--sans); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; transition: background .25s var(--ease), color .25s var(--ease); position: relative; font-weight: 500; }
+  .tab-btn:last-child{ border-right: 0; }
+  .tab-btn:hover:not(.active){ background: var(--card-2); color: var(--ink); }
+  .tab-btn.active{ color: var(--ink); background: var(--card-2); }
+  .tab-btn.active::after{ content:''; position:absolute; left:14px; right:14px; bottom:0; height:2px; background: var(--brass); }
+  .btn-print{ font-family: var(--sans); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; padding: 12px 18px; border: 1px solid var(--brass); background: var(--brass); color: #fff; cursor: pointer; border-radius: 2px; font-weight: 500; transition: opacity .2s; display:inline-flex; align-items:center; gap:8px; }
+  .btn-print:hover{ opacity:.86; }
+  .btn-print svg{ width:13px; height:13px; }
+
+  /* ── Legenda ── */
+  .legend{ max-width: 1180px; margin: 0 auto 24px; display:flex; gap: 22px; flex-wrap: wrap; justify-content:center; font-family: var(--sans); font-size: 10.5px; letter-spacing: .04em; color: var(--ink-soft); padding-top: 12px; }
+  .legend span{ display:inline-flex; align-items:center; gap: 8px; }
+  .legend small{ color: var(--ink-faint); }
+  .legend i{ width: 16px; height: 12px; display:inline-block; box-shadow: 0 0 0 1px rgba(44,32,24,.4); }
+
+  /* ── Panels ── */
+  .panel{ display: none; max-width: 1240px; margin: 0 auto; }
+  .panel.active{ display: block; animation: fadeUp .45s var(--ease); }
+  @keyframes fadeUp{ from{ opacity:0; transform: translateY(8px);} to{ opacity:1; transform:none;} }
+
+  /* ── Controls ── */
+  .controls{ display:flex; align-items:center; justify-content:center; gap: 20px; flex-wrap: wrap; margin: 0 auto 18px; padding: 14px 20px; background: var(--card); border:1px solid var(--line); border-radius: 2px; max-width: 1120px; }
+  .ctrl-group{ display:flex; align-items:center; gap: 10px; }
+  .ctrl-div{ width:1px; align-self:stretch; background: var(--line); }
+  .ctrl-lab{ font-family: var(--sans); font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint); }
+  .btn{ font-family: var(--sans); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; padding: 10px 16px; border: 1px solid var(--brass); background: var(--brass); color: #fff; cursor: pointer; border-radius: 2px; transition: opacity .2s; display:inline-flex; align-items:center; gap:8px; font-weight:500; }
+  .btn:hover{ opacity:.86; }
+  .btn.ghost{ background: transparent; color: var(--brass); }
+  .btn.ghost:hover{ background: var(--card-2); opacity:1; }
+  .btn svg{ width:13px; height:13px; }
+
+  .struct-seg{ display:inline-flex; border: 1px solid var(--line); border-radius: 2px; overflow:hidden; }
+  .struct-btn{ font-family: var(--sans); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; padding: 10px 13px; background: var(--card-2); border: 0; border-right: 1px solid var(--line-soft); color: var(--ink-soft); cursor: pointer; transition: background .2s, color .2s; }
+  .struct-btn:last-child{ border-right: 0; }
+  .struct-btn:hover:not(.active){ color: var(--ink); }
+  .struct-btn.active{ background: var(--brass); color: #fff; }
+
+  .slider-wrap{ display:flex; align-items:center; gap: 10px; }
+  .slider-end{ font-family: var(--sans); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); white-space:nowrap; }
+  input[type=range]{ -webkit-appearance:none; appearance:none; width: 140px; height: 2px; background: var(--brass-dim); border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width: 16px; height:16px; border-radius:50%; background: var(--brass); border: 2px solid var(--card); box-shadow: 0 1px 4px rgba(60,42,22,.4); cursor: grab; }
+  input[type=range]::-moz-range-thumb{ width: 16px; height:16px; border-radius:50%; background: var(--brass); border: 2px solid var(--card); box-shadow: 0 1px 4px rgba(60,42,22,.4); cursor: grab; }
+  .ord-val{ font-family: var(--sans); font-size: 10px; letter-spacing:.06em; color: var(--brass); min-width: 74px; text-align:left; font-weight:600; }
+  .gap-val{ font-family: var(--sans); font-size: 10px; letter-spacing:.06em; color: var(--brass); min-width: 40px; font-weight:600; }
+
+  .seed-input{ font-family: var(--sans); font-size: 11px; letter-spacing:.08em; padding: 9px 12px; border:1px solid var(--line); background: var(--card-2); color: var(--ink); border-radius: 2px; width: 160px; text-align:center; }
+  .chk-wrap{ display:flex; align-items:center; gap:8px; cursor:pointer; }
+  .chk-wrap input{ accent-color: var(--brass); cursor:pointer; width:14px; height:14px; }
+  .chk-wrap span{ font-family: var(--sans); font-size: 10px; letter-spacing:.04em; color: var(--ink-soft); }
+
+  /* ── Impostazioni progetto ── */
+  .settings{ max-width: 1120px; margin: 0 auto 26px; background: var(--card); border: 1px solid var(--line); border-radius: 2px; }
+  .settings summary{ cursor: pointer; padding: 14px 20px; font-family: var(--sans); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--brass); font-weight: 600; list-style: none; display:flex; align-items:center; gap: 10px; user-select: none; }
+  .settings summary::-webkit-details-marker{ display:none; }
+  .settings summary::before{ content:'▸'; font-size: 11px; transition: transform .2s; }
+  .settings[open] summary::before{ transform: rotate(90deg); }
+  .settings-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 6px 22px 22px; border-top: 1px solid var(--line-soft); }
+  .settings-col h5{ font-family: var(--sans); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-faint); margin: 14px 0 10px; font-weight: 600; }
+  .settings-counts{ grid-column: 1 / -1; }
+  .ed-row{ display:flex; align-items:center; gap: 7px; margin-bottom: 7px; flex-wrap: wrap; }
+  .ed-row.ed-head{ font-family: var(--sans); font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 3px; gap: 7px; }
+  .ed-row.ed-head span{ display:inline-block; }
+  .ed-lab{ font-family: var(--sans); font-size: 9px; color: var(--ink-faint); }
+  .mini-num, .mini-txt{ font-family: var(--sans); font-size: 11.5px; padding: 7px 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 2px; }
+  .mini-num{ width: 62px; text-align: center; }
+  .mini-sel{ font-family: var(--sans); font-size: 11px; padding: 6px 5px; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 2px; cursor: pointer; }
+  .mini-cl{ display:inline-flex; align-items:center; justify-content:center; width: 46px; }
+  .mini-cl input{ accent-color: var(--brass); width:15px; height:15px; cursor:pointer; }
+  .ed-del{ width: 24px; height: 24px; border: 1px solid var(--line); background: transparent; color: var(--ink-faint); border-radius: 2px; cursor: pointer; font-size: 10px; line-height: 1; transition: color .2s, border-color .2s; }
+  .ed-del:hover{ color: #a33; border-color: #c99; }
+  .ed-add{ font-family: var(--sans); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; padding: 8px 13px; background: transparent; border: 1px dashed var(--brass-dim); color: var(--brass); border-radius: 2px; cursor: pointer; margin-top: 4px; transition: background .2s; }
+  .ed-add:hover{ background: var(--card-2); }
+  .ed-sw{ width: 14px; height: 14px; display:inline-block; box-shadow: 0 0 0 1px rgba(44,32,24,.35); }
+  .counts-tbl{ border-collapse: collapse; background: transparent; border: 0; width: auto; }
+  .counts-tbl th{ font-family: var(--sans); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); padding: 4px 8px; background: transparent; border: 0; text-align: center; font-weight: 600; }
+  .counts-tbl td{ padding: 3px 8px; border: 0; text-align: center; }
+  .counts-wall{ font-family: var(--sans); font-size: 11px; color: var(--ink); text-align: left !important; font-weight: 600; }
+  .counts-tot{ font-family: var(--sans); font-size: 11.5px; color: var(--brass); font-weight: 700; }
+
+  /* ── Pareti ── */
+  .walls-stack{ display:flex; flex-direction:column; gap: 38px; align-items:center; }
+  .wall-block{ width: max-content; max-width: 100%; }
+  .wall-head{ display:flex; align-items: baseline; justify-content: space-between; margin-bottom: 7px; gap: 14px; flex-wrap:wrap; }
+  .wall-head .wk{ font-family: var(--sans); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); font-weight: 600; }
+  .wall-head .wk em{ font-family: var(--serif); font-style: italic; text-transform:none; letter-spacing:0; color: var(--ink-faint); font-size: 12.5px; margin-left: 10px; }
+  .wall-head .wmix{ font-family: var(--sans); font-size: 9.5px; letter-spacing: .04em; color: var(--ink-soft); }
+  .wall-head .wmix b{ color: var(--brass); font-weight: 600; }
+  .wwarn{ font-family: var(--sans); font-size: 9.5px; letter-spacing: .04em; color: #a33; font-weight: 600; }
+  .wall-mini{ font-family: var(--sans); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; padding: 5px 11px; background: transparent; border: 1px solid var(--line); color: var(--ink-soft); cursor: pointer; border-radius: 2px; transition: background .2s, color .2s; }
+  .wall-mini:hover{ background: var(--card-2); color: var(--brass); border-color: var(--brass-dim); }
+
+  .dim-arrow{ position: relative; height: 18px; margin-bottom: 6px; }
+  .dim-arrow .line{ position:absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--brass-dim); }
+  .dim-arrow .line::before, .dim-arrow .line::after{ content:''; position:absolute; top: -3px; width: 0; height: 0; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent; }
+  .dim-arrow .line::before{ left:0; border-right: 6px solid var(--brass-dim); }
+  .dim-arrow .line::after{ right:0; border-left: 6px solid var(--brass-dim); }
+  .dim-arrow .cap{ position:absolute; top:0; left:0; bottom:0; width:1px; background: var(--brass-dim); }
+  .dim-arrow .cap.r{ left:auto; right:0; }
+  .dim-arrow .dval{ position:absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); background: var(--bg); padding: 0 10px; font-family: var(--sans); font-size: 10px; letter-spacing: .12em; color: var(--brass); text-transform: uppercase; }
+
+  .wall-canvas{ position: relative; overflow: hidden; flex-shrink: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,.5), rgba(0,0,0,.025) 65%, rgba(80,60,40,.06)), var(--wall-paint);
+    box-shadow: 0 0 0 1px var(--line), 0 26px 50px -28px rgba(60,42,22,.5), inset 0 1px 0 rgba(255,255,255,.6); }
+  .wall-canvas::after{ content:''; position:absolute; inset:0; pointer-events:none; opacity:.5; background-image: var(--grain); mix-blend-mode: multiply; }
+  .wall-canvas .registro{ position:absolute; left:0; right:0; height:1px; background: rgba(156,122,69,.16); pointer-events:none; z-index:1; }
+  .wall-canvas .dimcorner{ position:absolute; bottom: 6px; right: 8px; z-index: 3; font-family: var(--sans); font-size: 9px; letter-spacing: .08em; color: rgba(46,40,32,.32); }
+
+  .ruler{ position: relative; height: 22px; margin-top: 8px; }
+  .ruler .rline{ position:absolute; top: 2px; left:0; right:0; height:1px; background: var(--line); }
+  .ruler .tick{ position:absolute; top: 2px; width:1px; height: 5px; background: var(--ink-faint); }
+  .ruler .tick.major{ height: 8px; background: var(--brass-dim); }
+  .ruler .tlab{ position:absolute; top: 11px; transform: translateX(-50%); font-family: var(--sans); font-size: 8.5px; letter-spacing: .06em; color: var(--ink-faint); }
+
+  /* ── Anteprima reale ── */
+  .real-intro{ max-width: 820px; margin: 0 auto 20px; text-align: center; }
+  .real-intro p{ font-size: 15px; font-style: italic; color: var(--ink-soft); line-height: 1.75; }
+  .calib-hint{ text-align:center; font-family: var(--sans); font-size: 10.5px; letter-spacing: .04em; color: var(--brass); margin-bottom: 18px; display:none; }
+  .calib-hint.show{ display:block; }
+  .real-stage{ display:flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
+  .real-card{ flex: 0 0 auto; }
+  .real-card .rc-head{ display:flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; gap: 12px; }
+  .real-card .rc-wall{ font-family: var(--sans); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); font-weight: 600; }
+  .real-card .rc-meta{ font-family: var(--sans); font-size: 9.5px; letter-spacing: .06em; color: var(--brass); text-transform: uppercase; }
+  .rc-acts{ display:flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
+  .photo-wrap{ position: relative; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 24px 50px -26px rgba(60,42,22,.55); background: #ddd; }
+  .photo-wrap.empty{ background: var(--card-2); box-shadow: none; border-style: dashed; }
+  .photo-empty{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap: 14px; }
+  .photo-empty span{ font-family: var(--sans); font-size: 11px; letter-spacing: .06em; color: var(--ink-faint); }
+  .photo-wrap img{ position:absolute; inset:0; width: 100%; height: 100%; object-fit: cover; display:block; }
+  .ovl-grid{ position: absolute; left:0; top:0; transform-origin: 0 0; z-index: 2; }
+  .handle{ position:absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; z-index: 9; border: 2px solid #fff; background: var(--brass); border-radius: 50%; cursor: grab; box-shadow: 0 1px 5px rgba(0,0,0,.5); touch-action: none; }
+  .handle:active{ cursor: grabbing; }
+
+  /* ── Analisi + Montaggio ── */
+  .math-wrap, .mont-wrap{ max-width: 1040px; margin: 0 auto; }
+  .math-intro{ font-size: 14px; font-style: italic; color: var(--ink-soft); margin-bottom: 24px; line-height: 1.7; max-width: 820px; }
+  .math-wrap h2, .mont-wrap h2{ font-family: var(--sans); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--brass); margin: 32px 0 14px; font-weight: 500; display:flex; align-items:center; gap: 12px; }
+  .math-wrap h2::after, .mont-wrap h2::after{ content:''; flex:1; height:1px; background: var(--line); }
+  table{ width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 13px; background: var(--card); border:1px solid var(--line); }
+  th{ text-align: left; padding: 10px 13px; background: var(--card-2); color: var(--brass); font-weight: 600; letter-spacing: .08em; font-family: var(--sans); font-size: 10px; text-transform: uppercase; border-bottom: 1px solid var(--line); }
+  td{ padding: 10px 13px; color: var(--ink-soft); border-bottom: 1px solid var(--line-soft); }
+  tr:last-child td{ border-bottom: 0; }
+  td strong{ color: var(--ink); }
+  .ok{ color: #5f7a3e !important; font-weight: 600; }
+  .warn{ color: #a33 !important; font-weight: 600; }
+  .note{ color: var(--ink-soft); font-size: 12.5px; line-height: 2; padding-left: 20px; }
+  .note li{ margin-bottom: 2px; }
+  .note b{ color: var(--ink); }
+  .mont-sec{ margin-bottom: 44px; }
+  .mont-sec .wall-canvas{ margin-bottom: 14px; }
+  .mont-chk{ font-size: 16px; text-align: center; }
+
+  /* ── Proposte ── */
+  .prop-card{ display:flex; align-items:center; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 2px; }
+  .prop-inc{ display:inline-flex; align-items:center; gap: 7px; font-family: var(--sans); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; margin-bottom: 6px; }
+  .prop-inc input{ accent-color: var(--brass); width: 15px; height: 15px; cursor: pointer; }
+  .prop-name{ font-size: 17px; color: var(--ink); margin-bottom: 3px; }
+  .prop-meta{ font-family: var(--sans); font-size: 10px; letter-spacing: .04em; color: var(--ink-faint); }
+  .prop-acts{ display:flex; gap: 8px; flex-shrink: 0; }
+
+  /* ── Documento PDF cliente ── */
+  #printDoc{ display:none; }
+  .pdf-page{ text-align:center; padding: 6mm 4mm; }
+  .pdf-ribbon{ font-family: var(--sans); font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: var(--brass); margin-bottom: 7mm; }
+  .pdf-wallhead{ font-family: var(--serif); font-size: 22px; color: var(--ink); margin-bottom: 6mm; }
+  .pdf-wallhead span{ font-size: 14px; color: var(--ink-soft); font-style: italic; }
+  .pdf-canvas-wrap{ display:flex; justify-content:center; }
+  .pdf-mix{ font-family: var(--sans); font-size: 11px; letter-spacing: .03em; color: var(--ink-soft); margin-top: 6mm; }
+  .pdf-mix b{ color: var(--brass); }
+
+  @media print{
+    @page{ size: A3 landscape; margin: 12mm; }
+    body{ background: #fff; color:#000; padding: 0; }
+    .toolbar, .btn-print, .calib-hint, .controls, .handle, .wall-mini, .proj-bar, .settings, .rc-acts{ display: none !important; }
+    header{ border-color:#ccc; }
+    .panel{ display: block !important; page-break-after: always; max-width: none; animation: none; }
+    .panel:last-child{ page-break-after: auto; }
+    #panel-real, #panel-prop{ display: none !important; }
+    .wall-canvas{ box-shadow: 0 0 0 1px #bbb !important; }
+    .wall-canvas::after{ opacity:.35; }
+    .wall-block, .mont-sec, table{ break-inside: avoid; }
+    /* l'ombra di sospensione usa box-shadow sfocato: alcuni motori PDF
+       (es. anteprima/stampa di macOS) la rasterizzano come un blocco grigio.
+       In stampa/PDF la togliamo: cornici nitide, nessun alone. */
+    .frame-shadow{ display: none !important; }
+    .cfrm > div, .cfrm > div > div{ box-shadow: none !important; }
+
+    /* PDF cliente: mostra solo #printDoc */
+    body.printing-client > header, body.printing-client > .proj-bar, body.printing-client > .toolbar, body.printing-client > .panel{ display:none !important; }
+    body.printing-client #printDoc{ display:block !important; }
+    body.printing-client .pdf-page{ page-break-after: always; break-inside: avoid; }
+    body.printing-client .pdf-page:last-child{ page-break-after: auto; }
+  }
+  @media (max-width: 980px){ .settings-grid{ grid-template-columns: 1fr; } h1{ font-size: 23px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="studio">Studio Fotografico · Strumento di progettazione</div>
+  <h1>Configuratore di <em>pareti fotografiche</em></h1>
+  <div class="meta">
+    Pareti, formati e quantità su misura per ogni cliente. Quattro strutture compositive — dalla <b>costellazione</b> libera alla <b>griglia</b> allineata — sempre rigenerabili e riproducibili.
+  </div>
+</header>
+
+<div class="proj-bar">
+  <span class="proj-lab">Progetto</span>
+  <select class="proj-sel" id="projSelect"></select>
+  <button class="proj-btn" onclick="newProject()">+ Nuovo</button>
+  <button class="proj-btn" onclick="dupProject()">Duplica</button>
+  <button class="proj-btn" onclick="renProject()">Rinomina</button>
+  <button class="proj-btn" onclick="delProject()">Elimina</button>
+</div>
+
+<div class="archive-bar" id="archiveBar"></div>
+
+<div class="toolbar">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('comp',this)">Composizione</button>
+    <button class="tab-btn" onclick="showTab('real',this)">Anteprima Reale</button>
+    <button class="tab-btn" onclick="showTab('mont',this)">Montaggio</button>
+    <button class="tab-btn" onclick="showTab('math',this)">Analisi</button>
+    <button class="tab-btn" onclick="showTab('prop',this)">Proposte</button>
+  </div>
+  <button class="btn-print" onclick="window.print()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 14h12v7H6z"></path></svg>
+    Stampa / PDF
+  </button>
+</div>
+
+<!-- ══ COMPOSIZIONE ══ -->
+<div id="panel-comp" class="panel active" data-screen-label="Composizione">
+  <div class="controls">
+    <div class="ctrl-group">
+      <button class="btn" onclick="regenerateAll()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 4v5h-5"></path></svg>
+        Rigenera
+      </button>
+    </div>
+    <div class="ctrl-div"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-lab">Struttura</span>
+      <div class="struct-seg">
+        <button class="struct-btn" data-s="cost">Costellazione</button>
+        <button class="struct-btn" data-s="righe">Righe</button>
+        <button class="struct-btn" data-s="colonne">Colonne</button>
+        <button class="struct-btn" data-s="griglia">Griglia</button>
+      </div>
+    </div>
+    <div class="ctrl-div"></div>
+    <div class="ctrl-group" id="ordGroup">
+      <span class="ctrl-lab">Ordine</span>
+      <div class="slider-wrap">
+        <span class="slider-end">Organico</span>
+        <input type="range" id="ordSlider" min="0" max="100" value="55">
+        <span class="slider-end">Allineato</span>
+      </div>
+      <span class="ord-val" id="ordVal"></span>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-lab">Spaziatura</span>
+      <input type="range" id="gapSlider" min="2" max="10" step="0.5" value="3" style="width:90px;">
+      <span class="gap-val" id="gapVal"></span>
+    </div>
+    <div class="ctrl-div"></div>
+    <label class="chk-wrap">
+      <input type="checkbox" id="chkOrient">
+      <span>Mix orizz. / vert.</span>
+    </label>
+    <div class="ctrl-div"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-lab">Codice</span>
+      <input class="seed-input" id="seedCode" spellcheck="false">
+      <button class="btn ghost" onclick="applyCode()">Richiama</button>
+    </div>
+  </div>
+
+  <div class="controls" style="max-width:1120px;">
+    <label class="chk-wrap">
+      <input type="checkbox" id="chkPhotos">
+      <span>Mostra foto del cliente nelle cornici</span>
+    </label>
+    <button class="btn ghost" onclick="openPhotoSettings()">Gestisci foto…</button>
+    <div class="ctrl-div"></div>
+    <button class="btn" onclick="saveProposta()">★ Salva come proposta</button>
+    <button class="btn ghost" onclick="generateClientPDF()">PDF cliente</button>
+  </div>
+
+  <details class="settings" id="settingsBox">
+    <summary>Impostazioni progetto — pareti · formati · quantità</summary>
+    <div class="settings-grid">
+      <div class="settings-col">
+        <h5>Pareti (nome · L × H cm · nota)</h5>
+        <div id="wallsEditor"></div>
+      </div>
+      <div class="settings-col">
+        <h5>Formati foto (cm) e passepartout per lato</h5>
+        <div id="formatsEditor"></div>
+      </div>
+      <div class="settings-col settings-counts">
+        <h5>Quantità per parete × formato</h5>
+        <div id="countsEditor"></div>
+      </div>
+      <div class="settings-col settings-counts">
+        <h5>Foto del cliente — riempiono le cornici nella configurazione</h5>
+        <div id="photoEditor"></div>
+      </div>
+    </div>
+  </details>
+
+  <div class="legend" id="legend"></div>
+  <div class="walls-stack" id="wallsStack"></div>
+</div>
+
+<!-- ══ ANTEPRIMA REALE ══ -->
+<div id="panel-real" class="panel" data-screen-label="Anteprima Reale">
+  <div class="real-intro">
+    <p>La composizione sovrapposta alle fotografie reali delle pareti del cliente. Carica una foto per ogni parete, poi trascina i punti dorati per calibrare la prospettiva. La calibrazione viene salvata nel progetto.</p>
+  </div>
+  <div class="controls" style="max-width:680px;">
+    <button class="btn ghost" id="calibBtn">Calibra posizione</button>
+    <button class="btn ghost" id="resetCalib">Ripristina calibrazione</button>
+  </div>
+  <div class="calib-hint" id="calibHint">Trascina i quattro punti dorati di ogni foto per allineare le cornici alla parete.</div>
+  <div class="real-stage" id="realStage"></div>
+</div>
+
+<!-- ══ MONTAGGIO ══ -->
+<div id="panel-mont" class="panel" data-screen-label="Montaggio">
+  <div class="mont-wrap" id="montWrap"></div>
+</div>
+
+<!-- ══ ANALISI ══ -->
+<div id="panel-math" class="panel" data-screen-label="Analisi">
+  <div class="math-wrap" id="mathWrap"></div>
+</div>
+
+<!-- ══ PROPOSTE ══ -->
+<div id="panel-prop" class="panel" data-screen-label="Proposte">
+  <div class="mont-wrap" id="propWrap"></div>
+</div>
+
+<!-- documento PDF cliente (visibile solo in stampa) -->
+<div id="printDoc"></div>
+
+<script src="configuratore/store.js"></script>
+<script src="configuratore/engine.js"></script>
+<script src="configuratore/ui.js"></script>
+<script src="configuratore/photos.js"></script>
+<script src="configuratore/proposte.js"></script>
+<script src="configuratore/tabs.js"></script>
+<script>
+document.documentElement.style.setProperty('--grain',
+  `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/></svg>")`);
+
+/* ── Barra Archivio: stato persistenza + collega/riconnetti cartella ── */
+function initArchiveBar(){
+  const bar=document.getElementById('archiveBar'); if(!bar||!window.Persist) return;
+  let stateMsg='';
+  Persist.onStatus(ev=>{
+    const el=document.getElementById('abState'); if(!el) return;
+    if(ev==='saved'){ el.textContent='salvato'; el.className='ab-state ok'; }
+    else if(ev==='error'){ el.textContent='errore di salvataggio'; el.className='ab-state err'; }
+  });
+  const folder=`<svg class="ab-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
+  const expBtn=`<button class="ab-btn" onclick="exportBackup()">Esporta backup</button>`;
+  const fileInput=`<input type="file" id="backupFile" accept="application/json,.json" style="display:none" onchange="importBackupFile(this)">`;
+  function render(){
+    bar.classList.remove('warn');
+    if(Persist.mode==='fs'){
+      bar.innerHTML=`${folder} Archivio: <b>${Persist.folderName||'cartella'}</b> <span class="ab-state ok" id="abState">collegato</span>`+
+        `<button class="ab-btn" onclick="changeFolder()">Cambia cartella</button>`+
+        `<button class="ab-btn" onclick="document.getElementById('backupFile').click()">Importa backup</button>`+
+        expBtn+
+        `<button class="ab-btn" onclick="unlinkFolder()">Scollega</button>`+
+        fileInput;
+      return;
+    }
+    bar.classList.add('warn');
+    if(!Persist.fsSupported){
+      bar.innerHTML=`${folder} I dati sono salvati <b>in questo browser</b>. Per sincronizzarli su più computer apri l'app in <b>Chrome</b> o Edge. `+expBtn;
+      return;
+    }
+    let html=`${folder} I dati sono <b>solo in questo browser</b> (non sincronizzati). `;
+    if(Persist.needsReconnect) html+=`<button class="ab-btn primary" onclick="reconnectFolder()">Riconnetti cartella</button>`;
+    else html+=`<button class="ab-btn primary" onclick="changeFolder()">Collega una cartella</button>`;
+    html+=expBtn;
+    bar.innerHTML=html;
+  }
+  window.changeFolder=async()=>{ const r=await Persist.connectFolder(); if(r) location.reload(); };
+  window.reconnectFolder=async()=>{ const r=await Persist.reconnect(); if(r) location.reload(); else alert('Riconnessione non riuscita: usa "Collega una cartella".'); };
+  window.unlinkFolder=async()=>{ if(confirm('Scollegare la cartella? I file restano sul disco; l\'app tornerà a salvare nel browser.')){ await Persist.disconnect(); location.reload(); } };
+  window.exportBackup=async()=>{
+    const backup=await Persist.exportBackup();
+    backup.date=String(Date.now());
+    const d=new Date(), iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([JSON.stringify(backup)],{type:'application/json'}));
+    a.download='pareti-backup-'+iso+'.json';
+    document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1000);
+  };
+  window.importBackupFile=async(input)=>{
+    const file=input.files&&input.files[0]; input.value=''; if(!file) return;
+    let backup; try{ backup=JSON.parse(await file.text()); }catch(e){ alert('File di backup non valido (non è JSON).'); return; }
+    const r=await Persist.importBackup(backup);
+    if(r){ alert(`Importati ${r.projects} progetti e ${r.foto} foto nella cartella.`); location.reload(); }
+  };
+  render();
+}
+
+(async function(){
+  if(window.Persist) await Persist.init();
+  initUI();
+  initRealControls();
+  if(typeof initPhotos==='function') initPhotos();
+  if(typeof initProposte==='function') initProposte();
+  initArchiveBar();
+})();
+</script>
+</body>
+</html>
